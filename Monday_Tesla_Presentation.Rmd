@@ -21,13 +21,13 @@ lapply(my_packages, require, character.only= T)
 
 
 ```{r}
-api_key <- 'eFGe3WrlFFWUxEktOd1KI8a9k'
+api_key <- 'xxxxx'
 
-api_secret <- 'kJCfBSTk9KkrrYRum3EI0VRHuDRtoSu1To01a1wBMNKIeHE3CT'
+api_secret <- 'xxxxx'
 
-access_token <- '495162410-HHopHiNQsLLQqQneOeJEKcJ6thTyZi123MvFlgov'
+access_token <- 'xxxxx'
 
-access_token_secret <- '8c1CVDH7icD8CTD0QKCpkQLpMrSkPH7JkKTfWLKVspfyM'
+access_token_secret <- 'xxxxx'
 
 setup_twitter_oauth(api_key, api_secret,access_token, access_token_secret)
 
