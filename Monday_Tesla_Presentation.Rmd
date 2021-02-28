@@ -1,0 +1,199 @@
+---
+title: "What do the tweets tell you?"
+author: "Mirza Wasim Ahmed"
+date: "28/02/2021"
+output: html_document
+---
+
+
+
+```{r}
+#######################
+#### Load Packages ####
+#######################
+
+my_packages <- c("twitteR", "ggplot2", "dplyr", "tm", "syuzhet",
+                 "wordcloud","RColorBrewer")
+
+lapply(my_packages, require, character.only= T)
+```
+
+
+
+```{r}
+api_key <- 'eFGe3WrlFFWUxEktOd1KI8a9k'
+
+api_secret <- 'kJCfBSTk9KkrrYRum3EI0VRHuDRtoSu1To01a1wBMNKIeHE3CT'
+
+access_token <- '495162410-HHopHiNQsLLQqQneOeJEKcJ6thTyZi123MvFlgov'
+
+access_token_secret <- '8c1CVDH7icD8CTD0QKCpkQLpMrSkPH7JkKTfWLKVspfyM'
+
+setup_twitter_oauth(api_key, api_secret,access_token, access_token_secret)
+
+```
+
+```{r}
+
+```
+
+
+##############################################
+## Local trends and IC timeline information ## ##############################################
+
+```{r}
+############################################
+######## Different Locations on Twitter ####
+############################################
+
+Locations <- availableTrendLocations()
+head(Locations)
+
+############################################
+##### What is trending at Auckland today ###
+############################################
+
+Auckland<- getTrends(2348079)
+head(Auckland)
+
+##############################################
+#### Industry Connect Timeline information ####
+###############################################
+
+IC <- getUser('IndustryConnec7')
+print(IC)
+
+IC.timeline <-userTimeline(IC, n=10)
+print(IC.timeline)
+
+
+```
+
+############################################
+## Gathering tweets and Creating CSV file ##
+############################################
+
+
+```{r}
+## Gather Tweets ##
+
+tesla_tweets <- searchTwitter('$Tesla',lang = 'en', n = 500)
+head(tesla_tweets)
+
+## Create CSV file ## 
+
+df_tesla_tweets <- twListToDF(tesla_tweets)
+write.csv(df_tesla_tweets, file = 'C:/Users/WASIM/Documents/tesla_tweets.csv', row.names = FALSE)
+```
+
+
+```{r}
+## Importing CSV ##
+tesla_tweets <- read.csv(file = 'C:/Users/WASIM/Documents/tesla_tweets.csv')
+head(tesla_tweets)
+
+```
+
+
+```{r}
+## Create corpus ##
+tesla_tweets.corpus<- iconv(tesla_tweets$text, to = "utf-8")
+tesla_tweets.corpus<- Corpus(VectorSource(tesla_tweets.corpus))
+inspect(tesla_tweets.corpus[1:4])
+```
+
+
+
+```{r}
+## Cleaning Dataset ##
+tesla_tweets.corpus<- tm_map(tesla_tweets.corpus, tolower)
+
+tesla_tweets.corpus<- tm_map(tesla_tweets.corpus, removePunctuation)
+
+tesla_tweets.corpus <- tm_map(tesla_tweets.corpus, removeNumbers)
+
+tesla_tweets.corpus <-tm_map(tesla_tweets.corpus, removeWords, stopwords('english'))
+
+pull_out_URL<- function(x) gsub('http[[//:alnum]]*', '', x)
+
+tesla_tweets.corpus<- tm_map(tesla_tweets.corpus, content_transformer(pull_out_URL))
+
+tesla_tweets.corpus<- tm_map(tesla_tweets.corpus, stripWhitespace)
+
+tesla_tweets.corpus<-tm_map(tesla_tweets.corpus, removeWords, c('just', 'twitter', 'retweets','will','this','anymore','httpstcojavpsgnk', 'fufffuduufef', 'a...', 'hey',"what's", 'httpstcopawwwpmoh','httpstcotabjklcsm','httpstcomakeehalu','httpstcouxsxkyz',
+                                                                'httpstcorcspolddp','sssvenky','httpstcopxwpqewdy','httpstcotlxddmwdf'))
+
+inspect(tesla_tweets.corpus[1:5])
+
+```
+
+```{r}
+## Formation of term document matrix ##
+
+tesla_tweets.tdm <- TermDocumentMatrix(tesla_tweets.corpus , control= list(minWordLength= c(1, Inf)))
+
+tesla_tweets.tdm<- as.matrix(tesla_tweets.tdm)
+tesla_tweets.tdm[1:10, 1:10]
+```
+
+
+```{r}
+## Word Count and finding frequent used words##
+tesla_tweets.wc<-rowSums(tesla_tweets.tdm)
+head(tesla_tweets.wc)
+
+tesla_tweets.wc<- subset(tesla_tweets.wc, wordcount > 40)
+print(head(tesla_tweets.wc))
+```
+
+
+```{r}
+barplot(tesla_tweets.wc, las=2,col = rainbow(10))
+
+```
+
+
+```{r}
+## Visualization of Public Opinion about Tesla ##
+tesla<- read.csv('C:/Users/WASIM/Documents/tesla_tweets.csv', header = T)
+
+tesla <- iconv(tesla$text, to = "utf-8" )
+
+Opinion <- get_nrc_sentiment(tesla, language = "english")
+
+head(Opinion)
+
+neg <- print(sum(Opinion$negative))
+
+pos <- print(sum(Opinion$positive))
+
+negative_percent <- (neg/(neg+pos))* 100
+
+negative_percent
+
+positive_percent <- (pos/(neg+pos)) *100
+
+positive_percent
+```
+
+
+```{r}
+barplot(colSums(Opinion), las=2, col= rainbow(10), main= 'Public views about Tesla', ylab= 'count')
+```
+
+
+
+
+
+
+```{r}
+set.seed(100)
+w <- sort(rowSums(tesla_tweets.tdm), decreasing = T)
+wordcloud(words=names(w),
+           freq= w,
+          max.words = 300,
+          random.order = F,
+          min.freq = 10)
+```
+
+
